@@ -26,18 +26,18 @@ import (
 //
 // NOTE: BufferedWriter is not goroutine-safe.
 type BufferedWriter struct {
-	out io.Writer
-	table *Table
-	buffer []string
+	out      io.Writer
+	table    *Table
+	buffer   []string
 	bulkSize uint
 }
 
 // NewBufferedWriter creates BufferedWriter with specified configs.
 func NewBufferedWriter(table *Table, out io.Writer, bulkSize uint) *BufferedWriter {
 	return &BufferedWriter{
-		out: out,
-		table: table,
-		buffer: make([]string, 0, bulkSize),
+		out:      out,
+		table:    table,
+		buffer:   make([]string, 0, bulkSize),
 		bulkSize: bulkSize,
 	}
 }
