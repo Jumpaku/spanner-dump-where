@@ -184,7 +184,7 @@ func TestDump(t *testing.T) {
 	defer tearDown()
 
 	out := &bytes.Buffer{}
-	dumper, err := NewDumper(ctx, testProjectId, testInstanceId, databaseId, out, nil, 1, nil)
+	dumper, err := NewDumper(ctx, testProjectId, testInstanceId, databaseId, out, nil, 1, nil, false, false)
 	if err != nil {
 		t.Fatalf("failed to create dumper: %v", err)
 	}
