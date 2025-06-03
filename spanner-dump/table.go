@@ -108,7 +108,11 @@ ORDER BY t.TABLE_NAME ASC
 	}
 
 	for _, tableName := range tableNames {
-		tables = append(tables, tableMap[tableName])
+		if table, exists := tableMap[tableName]; exists {
+			tables = append(tables, table)
+		} else {
+			return nil, fmt.Errorf("unknown table: %s", tableName)
+		}
 	}
 
 	return tables, nil
