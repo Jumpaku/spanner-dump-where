@@ -1,0 +1,60 @@
+name: spanner-dump-where
+version: v0.0.0
+description: |
+    Dump data from a Google Cloud Spanner database with specified conditions.
+    This command allows you to export data from a Spanner database, applying filters and options to control the output.
+options:
+  -project:
+    description: |
+      Google Cloud project ID.
+      This option is required.
+    short: -p
+  -instance:
+    description: |
+      Google Cloud Spanner instance ID.
+      This option is required.
+    short: -i
+  -database:
+    description: |
+      Google Cloud Spanner database ID.
+      This option is required.
+    short: -d
+  -from:
+    description: |
+      Table name to dump data from.
+      This option can be specified one or more times.
+    repeated: true
+  -where:
+    description: |
+      Condition to filter data.
+      This option is required for each -from option.
+      The format is an SQL boolean expression after WHERE clause.
+    repeated: true
+  -no-ddl:
+    description: |
+      If true, do not dump DDL statements.
+    type: boolean
+  -no-data:
+    description: |
+      If true, do not dump data.
+    type: boolean
+  -bulk-size:
+    description: |
+      Number of rows to dump in a single batch.
+      This option is used to control the size of the data dump.
+    type: integer
+    default: "100"
+  -timestamp:
+    description: |
+      Timestamp to use for the dump.
+    short: -t
+  -sort:
+    description: |
+      If true, sort the dump order according to dependency relationships on tables.
+      This option is used to control the order of the dumped data.
+    type: boolean
+  -upsert:
+    description: |
+      If true, use INSERT OR UPDATE instead of INSERT.
+    type: boolean
+

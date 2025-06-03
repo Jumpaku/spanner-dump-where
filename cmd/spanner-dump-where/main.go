@@ -1,90 +1,85 @@
-//
-// Copyright 2020 Google LLC
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
-
-// spanner-dump is a command line tool for exporting a Cloud Spanner database in text format.
 package main
 
 import (
 	"context"
 	"fmt"
 	"github.com/Jumpaku/spanner-dump-whare/spanner-dump"
+	"log"
 	"os"
-	"strings"
 	"time"
-
-	"github.com/jessevdk/go-flags"
 )
 
-type options struct {
-	ProjectId  string `short:"p" long:"project" env:"SPANNER_PROJECT_ID" description:"(required) GCP Project ID."`
-	InstanceId string `short:"i" long:"instance" env:"SPANNER_INSTANCE_ID" description:"(required) Cloud Spanner Instance ID."`
-	DatabaseId string `short:"d" long:"database" env:"SPANNER_DATABASE_ID" description:"(required) Cloud Spanner Database ID."`
-	Tables     string `long:"tables" description:"comma-separated table names, e.g. \"table1,table2\" "`
-	NoDDL      bool   `long:"no-ddl" description:"No DDL information."`
-	NoData     bool   `long:"no-data" description:"Do not dump data."`
-	Timestamp  string `long:"timestamp" description:"Timestamp for database snapshot in the RFC 3339 format."`
-	BulkSize   uint   `long:"bulk-size" description:"Bulk size for values in a single INSERT statement."`
+func main() {
+	if err := Run(cli{}, os.Args); err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
 }
 
-func main() {
-	var opts options
+type cli struct{}
 
-	if _, err := flags.Parse(&opts); err != nil {
-		exitf("Invalid options\n")
+func (cli) Run(input Input) error {
+	if input.ErrorMessage != "" {
+		fmt.Println(GetDoc(input.Subcommand))
+		panicf("Error: %s\n", input.ErrorMessage)
 	}
-
-	if opts.ProjectId == "" || opts.InstanceId == "" || opts.DatabaseId == "" {
-		exitf("Missing parameters: -p, -i, -d are required\n")
+	if input.Opt_Project == "" || input.Opt_Instance == "" || input.Opt_Database == "" {
+		fmt.Println(GetDoc(input.Subcommand))
+		panicf("Error: Missing parameters: -project, -instance, -database are required\n")
+	}
+	if len(input.Opt_From) == 0 || len(input.Opt_Where) == 0 {
+		fmt.Println(GetDoc(input.Subcommand))
+		panicf("Error: Missing parameters: -from and -where are required\n")
+	}
+	if len(input.Opt_From) != len(input.Opt_Where) {
+		fmt.Println(GetDoc(input.Subcommand))
+		panicf("Error: Invalid parameters: count of -from and -where must be same\n")
 	}
 
 	var timestamp *time.Time
-	if opts.Timestamp != "" {
-		t, err := time.Parse(time.RFC3339, opts.Timestamp)
-		if err != nil {
-			exitf("Failed to parse timestamp: %v\n", err)
-		}
+	if input.Opt_Timestamp != "" {
+		t, err := time.Parse(time.RFC3339, input.Opt_Timestamp)
+		panicfIfError(err, "Error: Invalid timestamp format")
 		timestamp = &t
 	}
 
-	var tables []string
-	if opts.Tables != "" {
-		tables = strings.Split(opts.Tables, ",")
+	query := make(map[string]string)
+	for index, from := range input.Opt_From {
+		query[from] = input.Opt_Where[index]
 	}
 
 	ctx := context.Background()
-	dumper, err := spanner_dump.NewDumper(ctx, opts.ProjectId, opts.InstanceId, opts.DatabaseId, os.Stdout, timestamp, opts.BulkSize, tables)
-	if err != nil {
-		exitf("Failed to create dumper: %v\n", err)
-	}
+	dumper, err := spanner_dump.NewDumper(ctx,
+		input.Opt_Project, input.Opt_Instance, input.Opt_Database,
+		os.Stdout,
+		timestamp,
+		uint(input.Opt_BulkSize),
+		query,
+		input.Opt_Sort,
+		input.Opt_Upsert,
+	)
+	panicfIfError(err, "Failed to create dumper")
 	defer dumper.Cleanup()
 
-	if !opts.NoDDL {
-		if err := dumper.DumpDDLs(ctx); err != nil {
-			exitf("Failed to dump DDLs: %v\n", err)
-		}
+	if !input.Opt_NoDdl {
+		err := dumper.DumpDDLs(ctx)
+		panicfIfError(err, "Failed to dump DDLs")
 	}
 
-	if !opts.NoData {
-		if err := dumper.DumpTables(ctx); err != nil {
-			exitf("Failed to dump tables: %v\n", err)
-		}
+	if !input.Opt_NoData {
+		err := dumper.DumpTables(ctx)
+		panicfIfError(err, "Failed to dump tables")
+	}
+
+	return nil
+}
+
+func panicfIfError(err error, format string, a ...interface{}) {
+	if err != nil {
+		log.Panicf(fmt.Sprintf(format, a...)+": %+v", err)
 	}
 }
 
-func exitf(format string, a ...interface{}) {
-	fmt.Fprintf(os.Stderr, format, a...)
-	os.Exit(1)
+func panicf(format string, a ...interface{}) {
+	log.Panicf(fmt.Sprintf(format, a...))
 }

@@ -17,22 +17,20 @@
 package spanner_dump
 
 import (
+	"cloud.google.com/go/spanner"
 	"context"
+	"errors"
 	"fmt"
+	"google.golang.org/api/iterator"
 	"io"
-	"os"
 	"regexp"
 	"strings"
 	"time"
 
-	"cloud.google.com/go/spanner"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
-	"google.golang.org/grpc"
-
 	adminapi "cloud.google.com/go/spanner/admin/database/apiv1"
-	adminpb "google.golang.org/genproto/googleapis/spanner/admin/database/v1"
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
+	adminpb "cloud.google.com/go/spanner/admin/database/apiv1/databasepb"
+
+	schenerate_spanner "github.com/Jumpaku/schenerate/spanner"
 )
 
 // This is an ad hoc value, but considering mutations limit (20,000),
@@ -45,17 +43,19 @@ type Dumper struct {
 	project   string
 	instance  string
 	database  string
-	tables    map[string]bool
+	query     map[string]string
 	out       io.Writer
 	timestamp *time.Time
 	bulkSize  uint
+	upsert    bool
+	tables    []string
 
 	client      *spanner.Client
 	adminClient *adminapi.DatabaseAdminClient
 }
 
 // NewDumper creates Dumper with specified configurations.
-func NewDumper(ctx context.Context, project, instance, database string, out io.Writer, timestamp *time.Time, bulkSize uint, tables []string) (*Dumper, error) {
+func NewDumper(ctx context.Context, project, instance, database string, out io.Writer, timestamp *time.Time, bulkSize uint, query map[string]string, sort bool, upsert bool) (*Dumper, error) {
 	dbPath := fmt.Sprintf("projects/%s/instances/%s/databases/%s", project, instance, database)
 	client, err := spanner.NewClientWithConfig(ctx, dbPath, spanner.ClientConfig{
 		SessionPoolConfig: spanner.SessionPoolConfig{
@@ -67,16 +67,7 @@ func NewDumper(ctx context.Context, project, instance, database string, out io.W
 		return nil, fmt.Errorf("failed to create spanner client: %v", err)
 	}
 
-	var opts []option.ClientOption
-	if emulatorAddr := os.Getenv("SPANNER_EMULATOR_HOST"); emulatorAddr != "" {
-		emulatorOpts := []option.ClientOption{
-			option.WithEndpoint(emulatorAddr),
-			option.WithGRPCDialOption(grpc.WithInsecure()),
-			option.WithoutAuthentication(),
-		}
-		opts = append(opts, emulatorOpts...)
-	}
-	adminClient, err := adminapi.NewDatabaseAdminClient(ctx, opts...)
+	adminClient, err := adminapi.NewDatabaseAdminClient(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create spanner admin client: %v", err)
 	}
@@ -85,21 +76,48 @@ func NewDumper(ctx context.Context, project, instance, database string, out io.W
 		bulkSize = defaultBulkSize
 	}
 
+	tables := []string{}
+	dumperQuery := map[string]string{}
+	for table, where := range query {
+		t := strings.Trim(table, "`")
+		dumperQuery[t] = where
+		tables = append(tables, t)
+	}
+	if sort {
+		q, err := schenerate_spanner.Open(ctx, project, instance, database)
+		if err != nil {
+			return nil, fmt.Errorf("failed to open schema: %v", err)
+		}
+		s, err := schenerate_spanner.ListSchemas(ctx, q, tables)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list schemas: %v", err)
+		}
+		g := s.BuildGraph()
+		idx, cyclic := g.TopologicalSort()
+		if cyclic {
+			return nil, fmt.Errorf("cyclic dependency detected in tables")
+		}
+		var ts []string
+		for _, i := range idx {
+			ts = append(ts, strings.Trim(g.Get(i).Name, "`"))
+		}
+		tables = ts
+	}
+
 	d := &Dumper{
 		project:     project,
 		instance:    instance,
 		database:    database,
-		tables:      map[string]bool{},
+		query:       dumperQuery,
+		tables:      tables,
 		out:         out,
-		timestamp:   timestamp,
 		bulkSize:    bulkSize,
+		timestamp:   timestamp,
+		upsert:      upsert,
 		client:      client,
 		adminClient: adminClient,
 	}
 
-	for _, table := range tables {
-		d.tables[strings.Trim(table, "`")] = true
-	}
 	return d, nil
 }
 
@@ -120,7 +138,8 @@ func (d *Dumper) DumpDDLs(ctx context.Context) error {
 	}
 
 	for _, ddl := range resp.Statements {
-		if len(d.tables) > 0 && !d.tables[parseTableNameFromDDL(ddl)] {
+		tableName := strings.Trim(parseTableNameFromDDL(ddl), "`")
+		if _, ok := d.query[tableName]; len(d.query) > 0 && !ok {
 			continue
 		}
 		fmt.Fprintf(d.out, "%s;\n", ddl)
@@ -157,30 +176,32 @@ func (d *Dumper) DumpTables(ctx context.Context) error {
 	}
 	defer txn.Close()
 
-	iter, err := FetchTables(ctx, txn)
+	tables, err := FetchTables(ctx, txn, d.tables)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to fetch tables: %v", err)
 	}
-
-	return iter.Do(func(t *Table) error {
-		if len(d.tables) > 0 && !d.tables[t.Name] {
-			return nil
+	for _, t := range tables {
+		if err := d.dumpTable(ctx, t, txn); err != nil {
+			return fmt.Errorf("failed to dump table %s: %v", t.Name, err)
 		}
-		return d.dumpTable(ctx, t, txn)
-	})
+	}
+	return nil
 }
 
 func (d *Dumper) dumpTable(ctx context.Context, table *Table, txn *spanner.ReadOnlyTransaction) error {
-	stmt := spanner.NewStatement(fmt.Sprintf("SELECT %s FROM `%s`", table.quotedColumnList(), table.Name))
-	opts := spanner.QueryOptions{Priority: sppb.RequestOptions_PRIORITY_LOW}
-	iter := txn.QueryWithOptions(ctx, stmt, opts)
+	queryCondition := d.query[table.Name]
+	if queryCondition == "" {
+		queryCondition = "TRUE"
+	}
+	stmt := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s", table.quotedColumnList(), table.Name, queryCondition)
+	iter := txn.Query(ctx, spanner.NewStatement(stmt))
 	defer iter.Stop()
 
-	writer := NewBufferedWriter(table, d.out, d.bulkSize)
+	writer := NewBufferedWriter(table, d.out, d.bulkSize, d.upsert)
 	defer writer.Flush()
 	for {
 		row, err := iter.Next()
-		if err == iterator.Done {
+		if errors.Is(err, iterator.Done) {
 			break
 		}
 		if err != nil {

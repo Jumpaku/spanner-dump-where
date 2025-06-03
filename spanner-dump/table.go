@@ -17,24 +17,20 @@
 package spanner_dump
 
 import (
+	"cloud.google.com/go/spanner"
 	"context"
 	"fmt"
 	"strings"
-
-	"cloud.google.com/go/spanner"
-
-	sppb "google.golang.org/genproto/googleapis/spanner/v1"
 )
 
 // Table represents a Spanner table.
 type Table struct {
-	Name        string
-	Columns     []string
-	ChildTables []*Table
+	Name    string
+	Columns []string
 }
 
 func (t *Table) String() string {
-	return fmt.Sprintf("{Name: %q, Columns: %v, ChildTables: %v}", t.Name, t.Columns, t.ChildTables)
+	return fmt.Sprintf("{Name: %q, Columns: %v}", t.Name, t.Columns)
 }
 
 func (t *Table) quotedColumnList() string {
@@ -50,22 +46,6 @@ type TableIterator struct {
 	tables []*Table
 }
 
-// Do executes a given func with each table in the database.
-func (i *TableIterator) Do(f func(*Table) error) error {
-	for _, t := range i.tables {
-		if err := f(t); err != nil {
-			return err
-		}
-		if len(t.ChildTables) > 0 {
-			childIter := &TableIterator{t.ChildTables}
-			if err := childIter.Do(f); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-
 type tableRow struct {
 	name       string
 	parentName string
@@ -73,7 +53,7 @@ type tableRow struct {
 }
 
 // FetchTables fetches all table information in the database from Spanner.
-func FetchTables(ctx context.Context, txn *spanner.ReadOnlyTransaction) (*TableIterator, error) {
+func FetchTables(ctx context.Context, txn *spanner.ReadOnlyTransaction, tableNames []string) (tables []*Table, err error) {
 	// SQL for fetching table name, parent, and columns
 	stmt := spanner.NewStatement(`
 SELECT t.TABLE_NAME as table, t.PARENT_TABLE_NAME as parent, c.columns
@@ -89,8 +69,7 @@ WHERE t.TABLE_CATALOG = '' AND t.TABLE_SCHEMA = '' AND t.TABLE_TYPE = 'BASE TABL
 ORDER BY t.TABLE_NAME ASC
 `)
 	var rows []tableRow
-	opts := spanner.QueryOptions{Priority: sppb.RequestOptions_PRIORITY_LOW}
-	if err := txn.QueryWithOptions(ctx, stmt, opts).Do(func(r *spanner.Row) error {
+	if err := txn.Query(ctx, stmt).Do(func(r *spanner.Row) error {
 		var tableName, parentTableName string
 		var columns []string
 		var parentTableNamePtr *string // nullable
@@ -120,20 +99,21 @@ ORDER BY t.TABLE_NAME ASC
 		return nil, err
 	}
 
-	tables := findChildTables(rows, "") // root
-	return &TableIterator{tables}, nil
-}
-
-func findChildTables(rows []tableRow, parent string) []*Table {
-	var tables []*Table
+	tableMap := map[string]*Table{}
 	for _, row := range rows {
-		if row.parentName == parent {
-			tables = append(tables, &Table{
-				Name:        row.name,
-				Columns:     row.columns,
-				ChildTables: findChildTables(rows, row.name),
-			})
+		tableMap[row.name] = &Table{
+			Name:    row.name,
+			Columns: row.columns,
 		}
 	}
-	return tables
+
+	for _, tableName := range tableNames {
+		if table, exists := tableMap[tableName]; exists {
+			tables = append(tables, table)
+		} else {
+			return nil, fmt.Errorf("unknown table: %s", tableName)
+		}
+	}
+
+	return tables, nil
 }
