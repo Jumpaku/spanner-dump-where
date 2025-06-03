@@ -1,67 +1,90 @@
-spanner-dump [![run-tests](https://github.com/Jumpaku/spanner-dump-whare/actions/workflows/run-tests.yaml/badge.svg)](https://github.com/Jumpaku/spanner-dump-whare/actions/workflows/run-tests.yaml)
+spanner-dump-where
 ===
 
-spanner-dump is a command line tool for exporting a Cloud Spanner database in text format.
-
-Exported databases can be imported to Cloud Spanner with [spanner-cli](https://github.com/cloudspannerecosystem/spanner-cli).
+spanner-dump-where is a command line tool for conditionally exporting a Google Cloud Spanner database in SQL format.
+Exported databases can be imported to Google Cloud Spanner with [spanner-cli](https://github.com/cloudspannerecosystem/spanner-cli).
 
 ```sh
 # Export
-$ spanner-dump -p ${PROJECT} -i ${INSTANCE} -d ${DATABASE} > data.sql
+$ spanner-dump-where -project=${PROJECT} -instance=${INSTANCE} -database=${DATABASE} \
+  -sort \
+  -bulk-size=10 \
+  -from=User -where='Age > 20' \
+  -from=UserItem -where='UserId = "1"' \
+  > data.sql
 
 # Import
 $ spanner-cli -p ${PROJECT} -i ${INSTANCE} -d ${DATABASE} < data.sql
 ```
 
-Please feel free to report issues and send pull requests, but note that this application is not officially supported as part of the Cloud Spanner product.
+spanner-dump-where enhances spanner-dump with the following features:
+- It can specify conditions to filter data using an SQL boolean expression.
+- It can sort the dump order according to dependency relationships, such as interleave and foreign keys.
+- It can use INSERT OR UPDATE instead of INSERT.
 
-## Use cases
-
-This tool can be used for the following use cases.
-
-- Export a database schema and/or data in text format for testing purposes
-- Export a database running on [Cloud Spanner Emulator](https://cloud.google.com/spanner/docs/emulator)
-
-For production databases, you should use an [officially-provided export](https://cloud.google.com/spanner/docs/export),
-which should be stable and much faster.
+spanner-dump-where is a fork of https://github.com/cloudspannerecosystem/spanner-dump .
 
 ## Limitations
 
-- This tool does not ensure consistency between database schema (DDL) and data. So you should avoid making changes to the schema while you are running this tool.
-- This tool does not consider data order constrained by [Foreign Keys](https://cloud.google.com/spanner/docs/foreign-keys/overview).
+- This tool does not ensure consistency between the database schema (DDL) and data. Therefore, you should avoid making changes to the schema while running this tool.
 
 ## Install
 
 ```
-go install github.com/Jumpaku/spanner-dump-whare@latest
+go install github.com/Jumpaku/spanner-dump-where@latest
 ```
 
 ## Usage
 
 ```
-Usage:
-  spanner-dump [OPTIONS]
+	spanner-dump-where
 
-Application Options:
-  -p, --project=   (required) GCP Project ID. [$SPANNER_PROJECT_ID]
-  -i, --instance=  (required) Cloud Spanner Instance ID. [$SPANNER_INSTANCE_ID]
-  -d, --database=  (required) Cloud Spanner Database ID. [$SPANNER_DATABASE_ID]
-      --tables=    comma-separated table names, e.g. "table1,table2"
-      --no-ddl     No DDL information.
-      --no-data    Do not dump data.
-      --timestamp= Timestamp for database snapshot in the RFC 3339 format.
-      --bulk-size= Bulk size for values in a single INSERT statement.
+    Description:
+        Dump data from a Google Cloud Spanner database with specified conditions.
+        This command allows you to export data from a Spanner database, applying filters and options to control the output.
 
-Help Options:
-  -h, --help       Show this help message
+    Syntax:
+        $ spanner-dump-where [<option>]...
+
+    Options:
+        -bulk-size=<integer>  (default=100):
+            Number of rows to dump in a single batch.
+            This option is used to control the size of the data dump.
+
+        -database=<string>, -d=<string>  (default=""):
+            Google Cloud Spanner database ID.
+            This option is required.
+
+        -from=<string>  (default=""):
+            Table name to dump data from.
+            This option can be specified one or more times.
+
+        -instance=<string>, -i=<string>  (default=""):
+            Google Cloud Spanner instance ID.
+            This option is required.
+
+        -no-data[=<boolean>]  (default=false):
+            If true, do not dump data.
+
+        -no-ddl[=<boolean>]  (default=false):
+            If true, do not dump DDL statements.
+
+        -project=<string>, -p=<string>  (default=""):
+            Google Cloud project ID.
+            This option is required.
+
+        -sort[=<boolean>]  (default=false):
+            If true, sort the dump order according to dependency relationships on tables.
+            This option is used to control the order of the dumped data.
+
+        -timestamp=<string>, -t=<string>  (default=""):
+            Timestamp to use for the dump.
+
+        -upsert[=<boolean>]  (default=false):
+            If true, use INSERT OR UPDATE instead of INSERT.
+
+        -where=<string>  (default=""):
+            Condition to filter data.
+            This option is required for each -from option.
+            The format is an SQL boolean expression after WHERE clause.
 ```
-
-This tool uses [Application Default Credentials](https://cloud.google.com/docs/authentication/production)
-to connect to Cloud Spanner. Please make sure to get credentials via `gcloud auth application-default login`
-before using this tool.
-
-Also, you need to have a [roles/spanner.databaseReader](https://cloud.google.com/spanner/docs/iam#roles)
-IAM role to use this tool.
-
-## Disclaimer
-This tool is still ALPHA quality. Do not use this tool for production databases.
