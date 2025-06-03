@@ -189,6 +189,10 @@ func (d *Dumper) DumpTables(ctx context.Context) error {
 }
 
 func (d *Dumper) dumpTable(ctx context.Context, table *Table, txn *spanner.ReadOnlyTransaction) error {
+	queryCondition := d.query[table.Name]
+	if queryCondition == "" {
+		queryCondition = "TRUE"
+	}
 	stmt := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s", table.quotedColumnList(), table.Name, d.query[table.Name])
 	iter := txn.Query(ctx, spanner.NewStatement(stmt))
 	defer iter.Stop()
