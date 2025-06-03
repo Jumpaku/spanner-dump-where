@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  work:
+    build:
+      context: "."
+      dockerfile: Dockerfile
+    working_dir: "/workspace"
+    command: [ "sleep", "infinity" ]
+    volumes:
+      - "../:/workspace/:delegated"
+    environment:
+      - SPANNER_EMULATOR_HOST=spanner:9010
+      - SPANNER_PROJECT=spanner-dump-where
+      - SPANNER_INSTANCE=example
+      - SPANNER_DATABASE=db
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator
+    ports:
+      - '9011:9010'
+      - '9021:9020'

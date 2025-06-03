@@ -101,7 +101,12 @@ func NewDumper(ctx context.Context, project, instance, database string, out io.W
 		for _, i := range idx {
 			ts = append(ts, strings.Trim(g.Get(i).Name, "`"))
 		}
+		// reverse tables
+		for i, j := 0, len(ts)-1; i < j; i, j = i+1, j-1 {
+			ts[i], ts[j] = ts[j], ts[i]
+		}
 		tables = ts
+
 	}
 
 	d := &Dumper{
