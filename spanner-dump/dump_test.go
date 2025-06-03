@@ -1,4 +1,4 @@
-package main
+package spanner_dump
 
 import "testing"
 

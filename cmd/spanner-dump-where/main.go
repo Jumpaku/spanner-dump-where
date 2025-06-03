@@ -20,6 +20,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/cloudspannerecosystem/spanner-dump/spanner-dump"
 	"os"
 	"strings"
 	"time"
@@ -64,7 +65,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	dumper, err := NewDumper(ctx, opts.ProjectId, opts.InstanceId, opts.DatabaseId, os.Stdout, timestamp, opts.BulkSize, tables)
+	dumper, err := spanner_dump.NewDumper(ctx, opts.ProjectId, opts.InstanceId, opts.DatabaseId, os.Stdout, timestamp, opts.BulkSize, tables)
 	if err != nil {
 		exitf("Failed to create dumper: %v\n", err)
 	}
