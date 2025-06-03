@@ -30,15 +30,17 @@ type BufferedWriter struct {
 	table    *Table
 	buffer   []string
 	bulkSize uint
+	upsert   bool
 }
 
 // NewBufferedWriter creates BufferedWriter with specified configs.
-func NewBufferedWriter(table *Table, out io.Writer, bulkSize uint) *BufferedWriter {
+func NewBufferedWriter(table *Table, out io.Writer, bulkSize uint, upsert bool) *BufferedWriter {
 	return &BufferedWriter{
 		out:      out,
 		table:    table,
 		buffer:   make([]string, 0, bulkSize),
 		bulkSize: bulkSize,
+		upsert:   upsert,
 	}
 }
 
@@ -69,7 +71,11 @@ func (w *BufferedWriter) Flush() {
 	// Use strings.Builder to avoid string being copied to build INSERT statement
 	sb := &strings.Builder{}
 	sb.Grow(n)
-	sb.WriteString("INSERT INTO `")
+	if w.upsert {
+		sb.WriteString("INSERT OR UPDATE INTO `")
+	} else {
+		sb.WriteString("INSERT INTO `")
+	}
 	sb.WriteString(w.table.Name)
 	sb.WriteString("` (")
 	sb.WriteString(quotedColumns)
