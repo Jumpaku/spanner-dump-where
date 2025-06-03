@@ -292,12 +292,12 @@ func TestDecodeColumn(t *testing.T) {
 			want:  `[NUMERIC "1234.123456789", NUMERIC "1234.567890000"]`,
 		},
 		{
-			desc:  "array json",
+			desc: "array json",
 			value: []spanner.NullJSON{
 				{Value: jsonMessage{Msg: "foo"}, Valid: true},
 				{Value: jsonMessage{Msg: "bar"}, Valid: true},
 			},
-			want:  `[JSON "{\"msg\":\"foo\"}", JSON "{\"msg\":\"bar\"}"]`,
+			want: `[JSON "{\"msg\":\"foo\"}", JSON "{\"msg\":\"bar\"}"]`,
 		},
 
 		// array nullable
