@@ -1,4 +1,4 @@
-module github.com/cloudspannerecosystem/spanner-dump
+module github.com/Jumpaku/spanner-dump-whare
 
 go 1.14
 

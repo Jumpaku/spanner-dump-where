@@ -1,4 +1,4 @@
-spanner-dump [![run-tests](https://github.com/cloudspannerecosystem/spanner-dump/actions/workflows/run-tests.yaml/badge.svg)](https://github.com/cloudspannerecosystem/spanner-dump/actions/workflows/run-tests.yaml)
+spanner-dump [![run-tests](https://github.com/Jumpaku/spanner-dump-whare/actions/workflows/run-tests.yaml/badge.svg)](https://github.com/Jumpaku/spanner-dump-whare/actions/workflows/run-tests.yaml)
 ===
 
 spanner-dump is a command line tool for exporting a Cloud Spanner database in text format.
@@ -33,7 +33,7 @@ which should be stable and much faster.
 ## Install
 
 ```
-go install github.com/cloudspannerecosystem/spanner-dump@latest
+go install github.com/Jumpaku/spanner-dump-whare@latest
 ```
 
 ## Usage

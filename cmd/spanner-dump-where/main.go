@@ -20,7 +20,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/cloudspannerecosystem/spanner-dump/spanner-dump"
+	"github.com/Jumpaku/spanner-dump-whare/spanner-dump"
 	"os"
 	"strings"
 	"time"
