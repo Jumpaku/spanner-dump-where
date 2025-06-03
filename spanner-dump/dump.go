@@ -193,7 +193,7 @@ func (d *Dumper) dumpTable(ctx context.Context, table *Table, txn *spanner.ReadO
 	if queryCondition == "" {
 		queryCondition = "TRUE"
 	}
-	stmt := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s", table.quotedColumnList(), table.Name, d.query[table.Name])
+	stmt := fmt.Sprintf("SELECT %s FROM `%s` WHERE %s", table.quotedColumnList(), table.Name, queryCondition)
 	iter := txn.Query(ctx, spanner.NewStatement(stmt))
 	defer iter.Stop()
 
