@@ -1,8 +1,6 @@
 module github.com/Jumpaku/spanner-dump-whare
 
-go 1.21.5
-
-toolchain go1.23.4
+go 1.23.4
 
 require (
 	cloud.google.com/go v0.116.0
