@@ -10,8 +10,6 @@ jobs:
       matrix:
         goos: ["darwin", "linux", "windows"]
         goarch: ["amd64", "arm64"]
-    permissions:
-      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
