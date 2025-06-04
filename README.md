@@ -37,7 +37,7 @@ go install github.com/Jumpaku/spanner-dump-where@latest
 ## Usage
 
 ```
-	spanner-dump-where
+    spanner-dump-where
 
     Description:
         Dump data from a Google Cloud Spanner database with specified conditions.
