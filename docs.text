@@ -2,7 +2,7 @@ spanner-dump-where (v0.0.0)
 
 
 
-	spanner-dump-where
+    spanner-dump-where
 
     Description:
         Dump data from a Google Cloud Spanner database with specified conditions.
