@@ -1,4 +1,4 @@
-FROM golang:1.21.5-bullseye AS work-base
+FROM golang:1.23.4-bullseye AS work-base
 
 ENV DEBIAN_FRONTEND=noninteractive
 

@@ -620,8 +620,8 @@ github.com/GoogleCloudPlatform/grpc-gcp-go/grpcgcp v1.5.0/go.mod h1:dppbR7CwXD4p
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1 h1:pB2F2JKCj1Znmp2rwxxt1J0Fg0wezTMgWYk5Mpbi1kg=
 github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.24.1/go.mod h1:itPGVDKf9cC/ov4MdvJ2QZ0khw4bfoo9jzwTJlaxy2k=
 github.com/JohnCGriffin/overflow v0.0.0-20211019200055-46fa312c352c/go.mod h1:X0CRv0ky0k6m906ixxpzmDRLvX58TFUKS2eePweuyxk=
-github.com/Jumpaku/schenerate v0.0.7 h1:jEYU3ZNt1mqA4Ax2YULDbTC8s3hLNqIn/0rhvEZ1H0w=
-github.com/Jumpaku/schenerate v0.0.7/go.mod h1:OaLDC13LM9teXngB3fxqMutizAi6rwJPuCHOMqzjNEc=
+github.com/Jumpaku/schenerate v0.0.8 h1:SrgV0sIIZYWyqr3OTOBuiYgF7qNIeen3iEbYXfTjOrI=
+github.com/Jumpaku/schenerate v0.0.8/go.mod h1:OaLDC13LM9teXngB3fxqMutizAi6rwJPuCHOMqzjNEc=
 github.com/Jumpaku/sqanner v0.0.2 h1:WRimUT9Dtypw5aj9ybPlLLoq1AUAhDgiNeUdyNM0zH4=
 github.com/Jumpaku/sqanner v0.0.2/go.mod h1:mLNTwxBtmgDCDAruLGHK+QhbIxgdc3pw3uiyKUtdJhs=
 github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAElWljhcU=

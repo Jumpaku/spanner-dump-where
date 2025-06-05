@@ -5,7 +5,7 @@ go 1.23.4
 require (
 	cloud.google.com/go v0.116.0
 	cloud.google.com/go/spanner v1.73.0
-	github.com/Jumpaku/schenerate v0.0.7
+	github.com/Jumpaku/schenerate v0.0.8
 	google.golang.org/api v0.203.0
 	google.golang.org/genproto v0.0.0-20241015192408-796eee8c2d53
 	google.golang.org/grpc v1.67.1
