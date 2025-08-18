@@ -31,7 +31,7 @@ $ spanner-cli -p ${DST_PROJECT} -i ${DST_INSTANCE} -d ${DST_DATABASE} < data.sql
 ## Install
 
 ```
-go install github.com/Jumpaku/spanner-dump-where@latest
+go install github.com/Jumpaku/spanner-dump-where/cmd/spanner-dump-where@v1.1.0
 ```
 
 ## Usage
