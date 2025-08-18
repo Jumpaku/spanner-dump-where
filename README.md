@@ -22,7 +22,7 @@ $ spanner-cli -p ${DST_PROJECT} -i ${DST_INSTANCE} -d ${DST_DATABASE} < data.sql
 - `spanner-dump-where` can sort the dump order according to dependency relationships, such as interleave and foreign keys.
 - `spanner-dump-where` can use INSERT OR UPDATE instead of INSERT.
 
-spanner-dump-where is a fork of https://github.com/cloudspannerecosystem/spanner-dump .
+`spanner-dump-where` is a fork of https://github.com/cloudspannerecosystem/spanner-dump .
 
 ## Limitations
 
