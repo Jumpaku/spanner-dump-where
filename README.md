@@ -1,7 +1,7 @@
 spanner-dump-where
 ===
 
-spanner-dump-where is a command line tool for conditionally exporting a Google Cloud Spanner database in SQL format.
+`spanner-dump-where` is a command line tool for conditionally exporting a Google Cloud Spanner database in SQL format.
 Exported databases can be imported to Google Cloud Spanner with [spanner-cli](https://github.com/cloudspannerecosystem/spanner-cli).
 
 ```sh
@@ -17,10 +17,10 @@ $ spanner-dump-where -project=${SRC_PROJECT} -instance=${SRC_INSTANCE} -database
 $ spanner-cli -p ${DST_PROJECT} -i ${DST_INSTANCE} -d ${DST_DATABASE} < data.sql
 ```
 
-spanner-dump-where enhances the spanner-dump with the following features:
-- spanner-dump-where can specify conditions to filter data using an SQL boolean expression.
-- spanner-dump-where can sort the dump order according to dependency relationships, such as interleave and foreign keys.
-- spanner-dump-where can use INSERT OR UPDATE instead of INSERT.
+`spanner-dump-where` enhances the `spanner-dump` with the following features:
+- `spanner-dump-where` can specify conditions to filter data using an SQL boolean expression.
+- `spanner-dump-where` can sort the dump order according to dependency relationships, such as interleave and foreign keys.
+- `spanner-dump-where` can use INSERT OR UPDATE instead of INSERT.
 
 spanner-dump-where is a fork of https://github.com/cloudspannerecosystem/spanner-dump .
 
