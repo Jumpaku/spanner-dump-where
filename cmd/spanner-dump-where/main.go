@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/Jumpaku/spanner-dump-whare/spanner-dump"
+	"github.com/Jumpaku/spanner-dump-where/spanner-dump"
 	"log"
 	"os"
 	"time"

@@ -1,4 +1,4 @@
-module github.com/Jumpaku/spanner-dump-whare
+module github.com/Jumpaku/spanner-dump-where
 
 go 1.23.4
 
