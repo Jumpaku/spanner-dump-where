@@ -6,7 +6,7 @@ Exported databases can be imported to Google Cloud Spanner with [spanner-cli](ht
 
 ```sh
 # Export
-$ spanner-dump-where -project=${PROJECT} -instance=${INSTANCE} -database=${DATABASE} \
+$ spanner-dump-where -project=${SRC_PROJECT} -instance=${SRC_INSTANCE} -database=${SRC_DATABASE} \
   -sort \
   -bulk-size=10 \
   -from=User -where='Age > 20' \
@@ -14,13 +14,13 @@ $ spanner-dump-where -project=${PROJECT} -instance=${INSTANCE} -database=${DATAB
   > data.sql
 
 # Import
-$ spanner-cli -p ${PROJECT} -i ${INSTANCE} -d ${DATABASE} < data.sql
+$ spanner-cli -p ${DST_PROJECT} -i ${DST_INSTANCE} -d ${DST_DATABASE} < data.sql
 ```
 
-spanner-dump-where enhances spanner-dump with the following features:
-- It can specify conditions to filter data using an SQL boolean expression.
-- It can sort the dump order according to dependency relationships, such as interleave and foreign keys.
-- It can use INSERT OR UPDATE instead of INSERT.
+spanner-dump-where enhances the spanner-dump with the following features:
+- spanner-dump-where can specify conditions to filter data using an SQL boolean expression.
+- spanner-dump-where can sort the dump order according to dependency relationships, such as interleave and foreign keys.
+- spanner-dump-where can use INSERT OR UPDATE instead of INSERT.
 
 spanner-dump-where is a fork of https://github.com/cloudspannerecosystem/spanner-dump .
 
